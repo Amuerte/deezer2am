@@ -1,0 +1,27 @@
+{
+    "id": 900000001,
+    "readable": true,
+    "title": "Morning Light (Remastered 2015)",
+    "title_short": "Morning Light",
+    "title_version": "(Remastered 2015)",
+    "isrc": "XXA011500001",
+    "link": "https://www.deezer.com/track/900000001",
+    "duration": 429,
+    "track_position": 21,
+    "disk_number": 1,
+    "release_date": "2015-12-24",
+    "explicit_lyrics": false,
+    "artist": {
+        "id": 920000001,
+        "name": "The Lanterns",
+        "link": "https://www.deezer.com/artist/920000001",
+        "type": "artist"
+    },
+    "album": {
+        "id": 910000001,
+        "title": "Lantern Songs (Remastered 2015)",
+        "release_date": "2015-12-24",
+        "type": "album"
+    },
+    "type": "track"
+}

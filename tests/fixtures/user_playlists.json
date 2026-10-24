@@ -1,0 +1,41 @@
+{
+    "data": [
+        {
+            "id": 1111111111,
+            "title": "Test playlist 1",
+            "duration": 3030,
+            "public": true,
+            "is_loved_track": false,
+            "collaborative": false,
+            "nb_tracks": 13,
+            "link": "https://www.deezer.com/playlist/1111111111",
+            "tracklist": "https://api.deezer.com/playlist/1111111111/tracks",
+            "creator": {
+                "id": 1000001,
+                "name": "test-user",
+                "tracklist": "https://api.deezer.com/user/1000001/flow",
+                "type": "user"
+            },
+            "type": "playlist"
+        },
+        {
+            "id": 2222222222,
+            "title": "Test playlist 2",
+            "duration": 1805,
+            "public": true,
+            "is_loved_track": false,
+            "collaborative": false,
+            "nb_tracks": 6,
+            "link": "https://www.deezer.com/playlist/2222222222",
+            "tracklist": "https://api.deezer.com/playlist/2222222222/tracks",
+            "creator": {
+                "id": 1000001,
+                "name": "test-user",
+                "tracklist": "https://api.deezer.com/user/1000001/flow",
+                "type": "user"
+            },
+            "type": "playlist"
+        }
+    ],
+    "total": 2
+}

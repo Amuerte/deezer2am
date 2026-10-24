@@ -1,0 +1,32 @@
+{
+    "data": [
+        {
+            "id": 900000002,
+            "readable": true,
+            "title": "Paper Boats",
+            "title_short": "Paper Boats",
+            "title_version": "",
+            "isrc": "XXB016900001",
+            "link": "https://www.deezer.com/track/900000002",
+            "duration": 189,
+            "explicit_lyrics": false,
+            "artist": {
+                "id": 920000002,
+                "name": "Harbor Lights",
+                "link": "https://www.deezer.com/artist/920000002",
+                "tracklist": "https://api.deezer.com/artist/920000002/top?limit=50",
+                "type": "artist"
+            },
+            "album": {
+                "id": 910000002,
+                "title": "Paper Boats",
+                "tracklist": "https://api.deezer.com/album/910000002/tracks",
+                "type": "album"
+            },
+            "type": "track"
+        }
+    ],
+    "checksum": "00000000000000000000000000000000",
+    "total": 2,
+    "prev": "https://api.deezer.com/playlist/3333333333/tracks?limit=100&index=0"
+}

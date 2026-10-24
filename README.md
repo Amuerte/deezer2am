@@ -12,6 +12,8 @@ The first step is getting the songs you want to import into Apple Music into a C
 
 You just need to login using your Spotify account, and all the playlists that you have saved in your library should appear. Export the CSV file of the playlist you want to convert and save it in the same directory as the directory where you cloned the repo.
 
+If you build the CSV file another way, it must follow the format described in [CSV input format](#csv-input-format).
+
 ### 2. Match the Spotify songs with their Apple Music identifier and upload them to Apple Music
 
 To upload your converted IDs to an Apple Music playlist, you'll need 5 things:
@@ -32,22 +34,24 @@ Here's a step by step to get all of this data:
 
    **ALL THIS DATA IS CASE SENSITIVE**. PLEASE MAKE SURE TO COPY IT RIGHT.
 
-7. Install the python dependencies:
+7. Install [uv](https://docs.astral.sh/uv/), which manages Python and the dependencies of this project. The uv version is pinned in `mise.toml`, so if you use [mise](https://mise.jdx.dev/) you can simply run:
 
 ```bash
-pip install -r requirements.txt
+mise install
 ```
 
-8. Now you're finally ready to connvert your songs and push them onto your Apple Music playlist. To do so, open a terminal and run the following:
+(Without mise, [install uv](https://docs.astral.sh/uv/getting-started/installation/) yourself.)
+
+8. Now you're finally ready to connvert your songs and push them onto your Apple Music playlist. To do so, open a terminal and run the following (on first run, `uv run` creates a `.venv` virtual environment and installs the dependencies automatically):
 
 ```bash
-python3 convertsongs.py yourplaylist.csv
+uv run convertsongs.py yourplaylist.csv
 ```
 
 or
 
 ```bash
-python3 convertsongs.py playlistdir
+uv run convertsongs.py playlistdir
 ```
 
 (Replace _yourplaylist.csv_ by your own filename, the one you got from [Exportify](https://watsonbox.github.io/exportify/), or _playlistdir_ by your own playlist directory name with all the `.csv` files you want to convert.)
@@ -55,6 +59,168 @@ python3 convertsongs.py playlistdir
 Follow the script prompt, and when asked, paste in each data. If your terminal have a paste character limit: please hardcode them OR put them into separate files named as following: `token.dat`, `media_user_token.dat` and `cookies.dat`.
 
 Please note that **the best practice** is to put your connection data as it can be reuse in a near future. Keep in mind that, those connection data will expire and you might need to get them again.
+
+## CSV input format
+
+`convertsongs.py` expects the CSV format produced by [Exportify](https://watsonbox.github.io/exportify/). Columns are read **by position**, not by name, so their order matters.
+
+### File
+
+- Comma-separated, with standard CSV quoting (double quotes around values containing commas, quotes or line breaks).
+- Encoded in UTF-8.
+- The first row is a header row; every other row is one track.
+- Every row must have at least 17 columns (up to `ISRC`). Extra columns after it (such as Exportify's "Added By", "Added At", genres or audio features) are ignored.
+
+### Columns
+
+| # | Exportify header (English) | Used for | Header checked |
+| --- | --- | --- | --- |
+| 0 | Track URI | – | No |
+| **1** | **Track Name** | Song title (text search) | Yes, see below |
+| 2 | Artist URI(s) | – | No |
+| **3** | **Artist Name(s)** | Artist (text search) | Yes, see below |
+| 4 | Album URI | – | No |
+| **5** | **Album Name** | Album (ISRC and text search) | Yes, see below |
+| 6 | Album Artist URI(s) | – | No |
+| **7** | **Album Artist Name(s)** | Album artist (ISRC search) | No |
+| **8** | **Album Release Date** | Release date (text search) | No |
+| 9 | Album Image URL | – | No |
+| 10 | Disc Number | – | No |
+| 11 | Track Number | – | No |
+| 12 | Track Duration (ms) | – | No |
+| 13 | Track Preview URL | – | No |
+| 14 | Explicit | – | No |
+| 15 | Popularity | – | No |
+| **16** | **ISRC** | ISRC code (ISRC search) | Must be exactly `ISRC` |
+
+Only the columns in bold are read; the others can be empty but must be present to keep the positions.
+
+### Header check
+
+Before converting anything, the script checks four header cells. If any of them doesn't match, it prints "The CSV file is not in the correct format!" and skips the file:
+
+- Column 1 must be one of the "track name" headers listed in `csv_column_names.py`.
+- Column 3 must be one of the "artist name" headers listed in `csv_column_names.py`.
+- Column 5 must be one of the "album name" headers listed in `csv_column_names.py`.
+- Column 16 must be exactly `ISRC`.
+
+`csv_column_names.py` lists the headers Exportify uses in English, French, German, Spanish, Italian, Portuguese, Swedish, Turkish, Arabic and Japanese. Exportify headers in Greek and Dutch are currently rejected: Greek is missing from the list, and the Dutch track name is misspelled there (`Nummmernaam` instead of `Nummernaam`).
+
+### Values
+
+- **Artist names**: multiple artists are separated by `, ` (Exportify escapes commas inside a name as `\,`). The value is used as-is.
+- **Album release date**: parsed with [dateparser](https://dateparser.readthedocs.io/), so any common format works. Spotify gives `YYYY-MM-DD`, `YYYY-MM` or `YYYY`.
+- **ISRC**: can be empty; the track then falls back to the text search (title, artist and album).
+- Apostrophes in every value are escaped (`'` becomes `\'`) before matching.
+
+### Example
+
+```csv
+Track URI,Track Name,Artist URI(s),Artist Name(s),Album URI,Album Name,Album Artist URI(s),Album Artist Name(s),Album Release Date,Album Image URL,Disc Number,Track Number,Track Duration (ms),Track Preview URL,Explicit,Popularity,ISRC
+,Morning Light - Remastered 2015,,The Lanterns,,Lantern Songs (Remastered),,The Lanterns,2000-11-13,,1,21,425653,,false,0,XXA011500001
+```
+
+### Playlist name and input path
+
+- The Apple Music playlist is named after the CSV file: the file name up to its first `.`, with `_` replaced by spaces and only the first letter capitalized (`my_Road_Trip.csv` gives "My road trip"). The playlist is reused if it already exists.
+- `uv run convertsongs.py <path>` treats `<path>` as a single file if it contains `.csv`, otherwise as a directory: every file in it (not in subdirectories) whose name contains `.csv` is converted, one playlist per file.
+
+## Deezer API client
+
+`deezer_api.py` is a small client for the public [Deezer API](https://api.deezer.com), and `deezer_client.py` is its command line interface. It needs no authentication, so it can only read public data:
+
+| Method | Endpoint | Returns |
+| --- | --- | --- |
+| `get_user_playlists(user_id=None, raw=False)` | `/user/{user_id}/playlists` | The user's **public** playlists |
+| `get_playlist_tracks(playlist_id, raw=False)` | `/playlist/{id}/tracks` | All the tracks of a playlist, including their ISRC code |
+| `get_track(track_id)` | `/track/{id}` | One track's details, including its ISRC code |
+
+### Configuration
+
+The client reads your Deezer user id from the `DEEZER_USER_ID` environment variable. Put it in a `.env` file at the root of the repository (this file is ignored by git):
+
+```bash
+DEEZER_USER_ID=<your_user_id>
+```
+
+Your user id is the number at the end of your Deezer profile URL (`https://www.deezer.com/profile/<your_user_id>`). Have uv load the file with `--env-file .env`.
+
+### Command line usage
+
+```bash
+# List your public playlists: id, number of tracks, title
+uv run --env-file .env deezer_client.py
+
+# List a playlist's tracks: id, ISRC, artist - title
+uv run --env-file .env deezer_client.py <playlist_id>
+```
+
+The output is logged to the console (stderr) with [loguru](https://github.com/Delgan/loguru). Set the `LOG_LEVEL` environment variable (`INFO` by default) to change its verbosity, e.g. `DEBUG` to see every request sent to the API:
+
+```bash
+LOG_LEVEL=DEBUG uv run --env-file .env deezer_client.py
+```
+
+#### JSON output
+
+Add `--json` to print the JSON response of the API to stdout, for instance to analyze it with [jq](https://jqlang.org/). Paginated responses are merged: you get the first page's response with the `data` of all the following pages appended (and no `next` link), so it reads as one complete response. Since logs go to stderr, stdout only contains the JSON:
+
+```bash
+# Titles and number of tracks of your playlists
+uv run --env-file .env deezer_client.py --json | jq -r '.data[] | "\(.nb_tracks)\t\(.title)"'
+
+# ISRC, artist and title of a playlist's tracks
+uv run --env-file .env deezer_client.py <playlist_id> --json | jq -r '.data[] | [.isrc, .artist.name, .title] | @tsv'
+```
+
+Add `2>/dev/null` to hide the logs as well.
+
+#### CSV output
+
+Add `--csv` to print a playlist's tracks to stdout in the [CSV input format](#csv-input-format) of `convertsongs.py`, so you can import a Deezer playlist into Apple Music:
+
+```bash
+uv run --env-file .env deezer_client.py <playlist_id> --csv > My_playlist.csv
+uv run convertsongs.py My_playlist.csv
+```
+
+The URI columns hold Deezer links. The Deezer API gives no album artist, release date, disc number, track number or popularity for the tracks of a playlist: the track artist is used as the album artist and the other columns are left empty. Tracks are still matched by their ISRC code first.
+
+`--csv` needs a playlist id and can't be combined with `--json`.
+
+### Python usage
+
+```python
+from deezer_api import DeezerApi, DeezerError
+
+api = DeezerApi()  # or DeezerApi(user_id="<your_user_id>")
+
+playlists = api.get_user_playlists()
+for playlist in playlists:
+    print(playlist["id"], playlist["title"])
+
+tracks = api.get_playlist_tracks(playlists[0]["id"])
+print(tracks[0]["isrc"], tracks[0]["artist"]["name"], tracks[0]["title"])
+
+track = api.get_track(tracks[0]["id"])
+print(track["isrc"], track["release_date"])
+```
+
+Notes:
+
+- Paginated results are fetched in full by following Deezer's `next` links.
+- With `raw=True`, `get_user_playlists` and `get_playlist_tracks` return the whole API response (all pages merged, as with `--json`) instead of the `data` list.
+- The tracks returned by `get_playlist_tracks` already contain the ISRC code, so there is no need to call `get_track` for each one.
+- Deezer reports errors with an HTTP 200 response holding an `error` object; the client raises them as `DeezerError` (with `type` and `code` attributes). HTTP failures raise `requests.HTTPError`.
+- Deezer allows 50 requests per 5 seconds. When this quota is exceeded, the client waits 5 seconds and retries, up to `max_retries` times (3 by default).
+
+### Running the tests
+
+The tests mock the Deezer API with JSON responses stored in `tests/fixtures/`, so they don't need a network connection:
+
+```bash
+uv run pytest
+```
 
 ## Limitations & Notes
 

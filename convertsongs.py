@@ -23,7 +23,7 @@ if len(argv) > 1 and argv[1]:
     pass
 else:
     print(
-        "\nCommand usage:\npython3 convertsongs.py yourplaylist.csv\nMore info at https://github.com/therealmarius/Spotify-2-AppleMusic"
+        "\nCommand usage:\nuv run convertsongs.py yourplaylist.csv\nMore info at https://github.com/Amuerte/deezer2am"
     )
     exit()
 
@@ -490,4 +490,4 @@ if __name__ == "__main__":
 # Developed by @therealmarius on GitHub
 # Based on the work of @simonschellaert on GitHub
 # Based on the work of @nf1973 on GitHub
-# Github project page: https://github.com/therealmarius/Spotify-2-AppleMusic
+# Github project page: https://github.com/Amuerte/deezer2am
