@@ -1,44 +1,10 @@
-import csv
-import io
-import json
-from pathlib import Path
-
 import pytest
 import requests
-import responses
 from loguru import logger
 from responses import matchers
 
-import deezer_api
-import deezer_client
 from deezer_api import DeezerApi, DeezerError
-
-FIXTURES = Path(__file__).parent / "fixtures"
-API = DeezerApi.BASE_URL
-
-
-def fixture(name):
-    return json.loads((FIXTURES / f"{name}.json").read_text())
-
-
-@pytest.fixture
-def api():
-    """Mock the Deezer API; fails the test if a registered response isn't used."""
-    with responses.RequestsMock() as mock:
-        yield mock
-
-
-@pytest.fixture(autouse=True)
-def env(monkeypatch):
-    monkeypatch.setenv("DEEZER_USER_ID", "1000001")
-
-
-@pytest.fixture
-def sleeps(monkeypatch):
-    """Record the quota back-off sleeps instead of waiting."""
-    calls = []
-    monkeypatch.setattr(deezer_api, "sleep", calls.append)
-    return calls
+from helpers import API, fixture, mock_paginated_tracks
 
 
 def test_user_id_is_read_from_environment():
@@ -87,15 +53,6 @@ def test_get_playlist_tracks_follows_pagination(api):
     assert [t["id"] for t in tracks] == [900000001, 900000002]
     assert [t["isrc"] for t in tracks] == ["XXA011500001", "XXB016900001"]
     assert tracks[0]["artist"]["name"] == "The Lanterns"
-
-
-def mock_paginated_tracks(api):
-    api.get(f"{API}/playlist/3333333333/tracks",
-            json=fixture("playlist_tracks_page1"),
-            match=[matchers.query_param_matcher({"limit": "100"})])
-    api.get(f"{API}/playlist/3333333333/tracks",
-            json=fixture("playlist_tracks_page2"),
-            match=[matchers.query_param_matcher({"limit": "100", "index": "1"})])
 
 
 def test_get_playlist_tracks_raw_merges_pages_into_one_response(api):
@@ -185,87 +142,3 @@ def test_http_error_is_raised(api):
 
     with pytest.raises(requests.HTTPError):
         DeezerApi().get_track(1)
-
-
-def test_cli_json_prints_playlists_response(api, capsys):
-    api.get(f"{API}/user/1000001/playlists", json=fixture("user_playlists"))
-
-    deezer_client.main(["--json"])
-
-    assert json.loads(capsys.readouterr().out) == fixture("user_playlists")
-
-
-def test_cli_json_prints_merged_tracks_response(api, capsys):
-    mock_paginated_tracks(api)
-
-    deezer_client.main(["3333333333", "--json"])
-
-    output = json.loads(capsys.readouterr().out)
-    assert [t["isrc"] for t in output["data"]] == ["XXA011500001", "XXB016900001"]
-    assert "next" not in output
-
-
-def test_cli_without_json_prints_nothing_on_stdout(api, capsys):
-    api.get(f"{API}/user/1000001/playlists", json=fixture("user_playlists"))
-
-    deezer_client.main([])
-
-    assert capsys.readouterr().out == ""
-
-
-def test_cli_error_exits_with_status_1(api, capsys):
-    api.get(f"{API}/playlist/1/tracks", json=fixture("error_no_data"))
-
-    with pytest.raises(SystemExit) as excinfo:
-        deezer_client.main(["1", "--json"])
-
-    assert excinfo.value.code == 1
-    assert capsys.readouterr().out == ""
-
-
-def test_cli_csv_prints_tracks_in_convertsongs_format(api, capsys):
-    mock_paginated_tracks(api)
-
-    deezer_client.main(["3333333333", "--csv"])
-
-    header, *rows = csv.reader(io.StringIO(capsys.readouterr().out))
-    assert header == deezer_client.CSV_HEADER
-    assert [row[16] for row in rows] == ["XXA011500001", "XXB016900001"]
-    assert rows[0][1] == "Morning Light (Remastered 2015)"
-    assert rows[0][3] == rows[0][7] == "The Lanterns"
-    assert rows[0][5] == "Lantern Songs (Remastered 2015)"
-    assert rows[0][12] == "429000"
-
-
-def test_csv_header_passes_convertsongs_check():
-    from csv_column_names import (valid_album_names_columns, valid_artist_names_columns,
-                                  valid_track_names_columns)
-    header = deezer_client.CSV_HEADER
-
-    assert header[1] in valid_track_names_columns
-    assert header[3] in valid_artist_names_columns
-    assert header[5] in valid_album_names_columns
-    assert header[16] == "ISRC"
-
-
-def test_csv_row_escapes_commas_in_artist_name():
-    track = fixture("track")
-    track["artist"]["name"] = "Crosby, Stills & Nash"
-
-    row = deezer_client.track_to_csv_row(track)
-
-    assert row[3] == "Crosby\\, Stills & Nash"
-
-
-def test_cli_csv_requires_playlist_id():
-    with pytest.raises(SystemExit) as excinfo:
-        deezer_client.main(["--csv"])
-
-    assert excinfo.value.code == 2
-
-
-def test_cli_csv_and_json_are_exclusive():
-    with pytest.raises(SystemExit) as excinfo:
-        deezer_client.main(["1", "--csv", "--json"])
-
-    assert excinfo.value.code == 2

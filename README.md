@@ -127,7 +127,7 @@ Track URI,Track Name,Artist URI(s),Artist Name(s),Album URI,Album Name,Album Art
 
 ## Deezer API client
 
-`deezer_api.py` is a small client for the public [Deezer API](https://api.deezer.com), and `deezer_client.py` is its command line interface. It needs no authentication, so it can only read public data:
+`deezer_api.py` is a small client for the public [Deezer API](https://api.deezer.com). `deezer2am.py` is the command line tool built on it: it lists your playlists and their tracks, and exports them to the CSV format of `convertsongs.py`. The client needs no authentication, so it can only read public data:
 
 | Method | Endpoint | Returns |
 | --- | --- | --- |
@@ -149,16 +149,16 @@ Your user id is the number at the end of your Deezer profile URL (`https://www.d
 
 ```bash
 # List your public playlists: id, number of tracks, title
-uv run --env-file .env deezer_client.py
+uv run --env-file .env deezer2am.py
 
 # List a playlist's tracks: id, ISRC, artist - title
-uv run --env-file .env deezer_client.py <playlist_id>
+uv run --env-file .env deezer2am.py <playlist_id>
 ```
 
 The output is logged to the console (stderr) with [loguru](https://github.com/Delgan/loguru). Set the `LOG_LEVEL` environment variable (`INFO` by default) to change its verbosity, e.g. `DEBUG` to see every request sent to the API:
 
 ```bash
-LOG_LEVEL=DEBUG uv run --env-file .env deezer_client.py
+LOG_LEVEL=DEBUG uv run --env-file .env deezer2am.py
 ```
 
 #### JSON output
@@ -167,10 +167,10 @@ Add `--json` to print the JSON response of the API to stdout, for instance to an
 
 ```bash
 # Titles and number of tracks of your playlists
-uv run --env-file .env deezer_client.py --json | jq -r '.data[] | "\(.nb_tracks)\t\(.title)"'
+uv run --env-file .env deezer2am.py --json | jq -r '.data[] | "\(.nb_tracks)\t\(.title)"'
 
 # ISRC, artist and title of a playlist's tracks
-uv run --env-file .env deezer_client.py <playlist_id> --json | jq -r '.data[] | [.isrc, .artist.name, .title] | @tsv'
+uv run --env-file .env deezer2am.py <playlist_id> --json | jq -r '.data[] | [.isrc, .artist.name, .title] | @tsv'
 ```
 
 Add `2>/dev/null` to hide the logs as well.
@@ -180,13 +180,82 @@ Add `2>/dev/null` to hide the logs as well.
 Add `--csv` to print a playlist's tracks to stdout in the [CSV input format](#csv-input-format) of `convertsongs.py`, so you can import a Deezer playlist into Apple Music:
 
 ```bash
-uv run --env-file .env deezer_client.py <playlist_id> --csv > My_playlist.csv
+uv run --env-file .env deezer2am.py <playlist_id> --csv > My_playlist.csv
 uv run convertsongs.py My_playlist.csv
 ```
 
 The URI columns hold Deezer links. The Deezer API gives no album artist, release date, disc number, track number or popularity for the tracks of a playlist: the track artist is used as the album artist and the other columns are left empty. Tracks are still matched by their ISRC code first.
 
 `--csv` needs a playlist id and can't be combined with `--json`.
+
+#### Converting a saved JSON response to CSV
+
+Use `--from-json <file>` to convert a `get_playlist_tracks` JSON response you already have, such as the output of `--json`, to the same CSV format, without calling the API (so `DEEZER_USER_ID` isn't needed). Pass `-` to read the JSON from stdin; the playlist id is then required, to name the [missing data report](#missing-data-report):
+
+```bash
+uv run --env-file .env deezer2am.py <playlist_id> --json > My_playlist.json
+uv run deezer2am.py --from-json My_playlist.json > My_playlist.csv
+
+# Or edit the response with jq first, e.g. to keep the tracks with an ISRC code only
+jq '.data |= map(select(.isrc))' My_playlist.json | uv run deezer2am.py <playlist_id> --from-json - > My_playlist.csv
+```
+
+The file must be a JSON object with a `data` list of tracks; a Deezer error response is reported as such. If it holds a single page of the playlist (it still has a `next` link, as when saved straight from the API), a warning is logged, since only that page's tracks are converted. With `--from-json`, a playlist id doesn't fetch anything: it only names the missing data report. `--from-json` can't be combined with `--json`.
+
+#### Missing data report
+
+`convertsongs.py` matches each track on its title, artist, album and ISRC code. When `--csv` or `--from-json` writes the CSV, the tracks where one of these is absent or empty are still written to the CSV (with an empty column), and also listed in a JSON report named after the playlist, `playlist-<playlist_id>-missing-data.json`. A warning gives its path and the number of tracks listed:
+
+```text
+10:12:55 | WARNING | 2 of 120 tracks miss data required by convertsongs.py, see playlist-1234567890-missing-data.json
+```
+
+The report is written to the current directory, or to the directory given with `--report-dir <dir>` (created if needed). With `--from-json` and no playlist id, the JSON file's name stands for it: `playlist-1234567890.json` gives `playlist-1234567890-missing-data.json`. When no track misses anything, no report is written, so an existing report from an earlier run is left as it is.
+
+```json
+{
+  "playlist_id": "1234567890",
+  "source": "Deezer API",
+  "total_tracks": 120,
+  "tracks_with_missing_data": 2,
+  "tracks": [
+    {
+      "position": 4,
+      "id": 900000101,
+      "link": "https://www.deezer.com/track/900000101",
+      "title": "Blue Hour",
+      "artist": "Night Owls",
+      "album": "Late Shows",
+      "isrc": "",
+      "missing": ["isrc"]
+    },
+    {
+      "position": 6,
+      "id": 900000102,
+      "link": "https://www.deezer.com/track/900000102",
+      "title": "Open Road",
+      "artist": "Saltwater",
+      "album": null,
+      "isrc": "XXD011200001",
+      "missing": ["album.title"]
+    }
+  ]
+}
+```
+
+| Field | Content |
+| --- | --- |
+| `playlist_id` | The playlist id, or `null` with `--from-json` and no playlist id |
+| `source` | `Deezer API`, or the file given to `--from-json` (`-` for stdin) |
+| `total_tracks` | Number of tracks in the playlist |
+| `tracks_with_missing_data` | Number of tracks listed in `tracks` |
+| `tracks[].position` | Position of the track in the playlist (1 for the first), which is also its row in the CSV, header aside |
+| `tracks[].id`, `link`, `title`, `artist`, `album`, `isrc` | What the Deezer API gives for the track (`null` when absent), to help you find it |
+| `tracks[].missing` | The missing fields, as paths into the API track: `title`, `artist.name`, `album.title` and/or `isrc` |
+
+A track without an ISRC code can't be matched by ISRC and falls back on the text search. A track missing its title, artist or album is unlikely to be found by the text search.
+
+Reports match `*-missing-data.json` in `.gitignore`, like the CSV files.
 
 ### Python usage
 
@@ -216,7 +285,7 @@ Notes:
 
 ### Running the tests
 
-The tests mock the Deezer API with JSON responses stored in `tests/fixtures/`, so they don't need a network connection:
+The tests mock the Deezer API with JSON responses stored in `tests/fixtures/`, so they don't need a network connection. `tests/test_deezer_api.py` tests the API client and `tests/test_deezer2am.py` the command line tool; their shared fixtures are in `tests/conftest.py` and helpers in `tests/helpers.py`:
 
 ```bash
 uv run pytest
