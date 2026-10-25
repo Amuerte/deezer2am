@@ -1,0 +1,40 @@
+{
+    "data": [
+        {
+            "id": "1900000001",
+            "type": "songs",
+            "href": "/v1/catalog/fr/songs/1900000001",
+            "attributes": {
+                "name": "Morning Light (Remastered 2015)",
+                "artistName": "The Lanterns",
+                "albumName": "Lantern Songs (Remastered)",
+                "isrc": "XXA011500001",
+                "releaseDate": "1968-08-26",
+                "durationInMillis": 425653,
+                "trackNumber": 21,
+                "discNumber": 1,
+                "genreNames": ["Rock", "Music"],
+                "url": "https://music.apple.com/fr/album/morning-light-remastered-2015/1900000101?i=1900000001",
+                "playParams": {"id": "1900000001", "kind": "song"}
+            }
+        },
+        {
+            "id": "1900000002",
+            "type": "songs",
+            "href": "/v1/catalog/fr/songs/1900000002",
+            "attributes": {
+                "name": "Morning Light (Remastered 2015)",
+                "artistName": "The Lanterns",
+                "albumName": "The Lanterns Live",
+                "isrc": "XXA011500001",
+                "releaseDate": "1968-08-26",
+                "durationInMillis": 425653,
+                "trackNumber": 13,
+                "discNumber": 1,
+                "genreNames": ["Rock", "Music"],
+                "url": "https://music.apple.com/fr/album/morning-light-remastered-2015/1900000102?i=1900000002",
+                "playParams": {"id": "1900000002", "kind": "song"}
+            }
+        }
+    ]
+}

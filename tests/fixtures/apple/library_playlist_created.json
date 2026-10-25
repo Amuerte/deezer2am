@@ -1,0 +1,17 @@
+{
+    "data": [
+        {
+            "id": "p.NEWxPLtA75zg8",
+            "type": "library-playlists",
+            "href": "/v1/me/library/playlists/p.NEWxPLtA75zg8",
+            "attributes": {
+                "name": "New playlist",
+                "description": {"standard": "A new playlist created via API using Spotify-2-AppleMusic"},
+                "canEdit": true,
+                "isPublic": false,
+                "hasCatalog": false,
+                "playParams": {"id": "p.NEWxPLtA75zg8", "kind": "playlist", "isLibrary": true}
+            }
+        }
+    ]
+}

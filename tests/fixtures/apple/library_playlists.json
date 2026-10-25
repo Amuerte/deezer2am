@@ -1,0 +1,30 @@
+{
+    "data": [
+        {
+            "id": "p.ldvAxVLsGzLEb4",
+            "type": "library-playlists",
+            "href": "/v1/me/library/playlists/p.ldvAxVLsGzLEb4",
+            "attributes": {
+                "name": "Road trip",
+                "canEdit": true,
+                "isPublic": false,
+                "hasCatalog": true,
+                "dateAdded": "2024-03-02T10:15:00Z",
+                "playParams": {"id": "p.ldvAxVLsGzLEb4", "kind": "playlist", "isLibrary": true}
+            }
+        },
+        {
+            "id": "p.qQXLxPLtA75zg8",
+            "type": "library-playlists",
+            "href": "/v1/me/library/playlists/p.qQXLxPLtA75zg8",
+            "attributes": {
+                "name": "My playlist",
+                "canEdit": true,
+                "isPublic": false,
+                "hasCatalog": true,
+                "dateAdded": "2025-11-20T08:00:00Z",
+                "playParams": {"id": "p.qQXLxPLtA75zg8", "kind": "playlist", "isLibrary": true}
+            }
+        }
+    ]
+}

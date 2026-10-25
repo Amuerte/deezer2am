@@ -60,6 +60,10 @@ Follow the script prompt, and when asked, paste in each data. If your terminal h
 
 Please note that **the best practice** is to put your connection data as it can be reuse in a near future. Keep in mind that, those connection data will expire and you might need to get them again.
 
+## How the conversion works
+
+[docs/convertsongs.md](docs/convertsongs.md) describes the algorithm of `convertsongs.py`: how it matches each track by ISRC, then by text search, adds it to the playlist and reports the results, plus its known issues and where to add features.
+
 ## CSV input format
 
 `convertsongs.py` expects the CSV format produced by [Exportify](https://watsonbox.github.io/exportify/). Columns are read **by position**, not by name, so their order matters.
@@ -283,13 +287,22 @@ Notes:
 - Deezer reports errors with an HTTP 200 response holding an `error` object; the client raises them as `DeezerError` (with `type` and `code` attributes). HTTP failures raise `requests.HTTPError`.
 - Deezer allows 50 requests per 5 seconds. When this quota is exceeded, the client waits 5 seconds and retries, up to `max_retries` times (3 by default).
 
-### Running the tests
+## Running the tests
 
-The tests mock the Deezer API with JSON responses stored in `tests/fixtures/`, so they don't need a network connection. `tests/test_deezer_api.py` tests the API client and `tests/test_deezer2am.py` the command line tool; their shared fixtures are in `tests/conftest.py` and helpers in `tests/helpers.py`:
+The tests mock the Deezer and Apple Music APIs with [responses](https://github.com/getsentry/responses), using JSON responses stored in `tests/fixtures/`, so they need neither a network connection nor credentials:
 
 ```bash
 uv run pytest
 ```
+
+| File | Tests |
+| --- | --- |
+| `tests/test_deezer_api.py` | The Deezer API client, `deezer_api.py` |
+| `tests/test_deezer2am.py` | The Deezer command line tool, `deezer2am.py` |
+| `tests/test_convertsongs.py` | The Apple Music conversion, `convertsongs.py`, against the mocked Apple Music catalog, library and iTunes Search APIs (`tests/fixtures/apple/`) |
+| `tests/conftest.py`, `tests/helpers.py` | Shared fixtures and helpers |
+
+The `convertsongs.py` tests are *characterization tests*: they pin down what the script does today, its [known issues](docs/convertsongs.md#7-known-issues) included, so that refactoring it can't change its behavior unnoticed. The tests pinning a known issue say so in a comment; when you fix one, update its test. See [Tests](docs/convertsongs.md#9-tests) for how they work.
 
 ## Limitations & Notes
 

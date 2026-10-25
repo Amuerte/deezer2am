@@ -1,0 +1,41 @@
+{
+    "resultCount": 2,
+    "results": [
+        {
+            "wrapperType": "track",
+            "kind": "song",
+            "artistId": 1900000201,
+            "collectionId": 1900000103,
+            "trackId": 1900000003,
+            "artistName": "Harbor Lights",
+            "collectionName": "Paper Boats - Single",
+            "trackName": "Paper Boats",
+            "artistViewUrl": "https://music.apple.com/fr/artist/harbor-lights/1900000201?uo=4",
+            "collectionViewUrl": "https://music.apple.com/fr/album/paper-boats/1900000103?i=1900000003&uo=4",
+            "trackViewUrl": "https://music.apple.com/fr/album/paper-boats/1900000103?i=1900000003&uo=4",
+            "releaseDate": "1969-01-01T12:00:00Z",
+            "trackTimeMillis": 189000,
+            "country": "FRA",
+            "currency": "EUR",
+            "primaryGenreName": "Pop"
+        },
+        {
+            "wrapperType": "track",
+            "kind": "song",
+            "artistId": 1900000201,
+            "collectionId": 1900000104,
+            "trackId": 1900000004,
+            "artistName": "Harbor Lights",
+            "collectionName": "Paper Boats",
+            "trackName": "Paper Boats",
+            "artistViewUrl": "https://music.apple.com/fr/artist/harbor-lights/1900000201?uo=4",
+            "collectionViewUrl": "https://music.apple.com/fr/album/paper-boats/1900000104?i=1900000004&uo=4",
+            "trackViewUrl": "https://music.apple.com/fr/album/paper-boats/1900000104?i=1900000004&uo=4",
+            "releaseDate": "1969-06-01T12:00:00Z",
+            "trackTimeMillis": 189000,
+            "country": "FRA",
+            "currency": "EUR",
+            "primaryGenreName": "Pop"
+        }
+    ]
+}
